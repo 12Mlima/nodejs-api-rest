@@ -1,5 +1,5 @@
 const conexao = require('../infraestrutura/conexao');
-const upload_arquivos = require('../arquivos/upload_arquivos');
+const upload_arquivos = require('../infraestrutura/arquivos/upload_arquivos');
 
 class Pet {
     create(pet, res) {
