@@ -2,7 +2,12 @@ const Atendimento = require('../models/atendimentos');
 
 module.exports = (aplication) => {
     aplication.get('/atendimentos', (req, res) => {
-        Atendimento.list(res);
+        Atendimento.list().then((resultados) =>
+            res
+                .status(200)
+                .json(resultados)
+                .catch((erros) => res.status(400).json(erros))
+        );
     });
 
     aplication.get('/atendimentos/:id', (req, res) => {
@@ -13,7 +18,11 @@ module.exports = (aplication) => {
     aplication.post('/atendimentos', (req, res) => {
         const atendimento = req.body;
 
-        Atendimento.create(atendimento, res);
+        Atendimento.create(atendimento)
+            .then((atendimentoCadastrado) =>
+                res.status(201).json(atendimentoCadastrado)
+            )
+            .catch((erros) => res.status(400).json(erros));
     });
 
     aplication.patch('/atendimentos/:id', (req, res) => {

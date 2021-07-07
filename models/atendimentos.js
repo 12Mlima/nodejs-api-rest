@@ -4,32 +4,49 @@ const conexao = require('../infraestrutura/conexao');
 const repositories = require('../repositories/atendimentos');
 
 class Atendimento {
-    create(atendimento, res) {
+    constructor() {
+        this.dataValida = (data, dataCriacao) =>
+            moment(data).isSameOrAfter(dataCriacao);
+        this.clienteValido = (tamanho) => tamanho >= 5;
+
+        this.valida = (parametros) =>
+            this.validacoes.filter((item) => {
+                const { nome } = item.nome;
+                const parametro = parametros[nome];
+
+                return !item.valido(parametro);
+            });
+
+        this.validacoes = [
+            {
+                nome: 'data',
+                valido: this.dataValida,
+                mensagem: 'Data deve ser maior ou igual a data atual'
+            },
+            {
+                nome: 'cliente',
+                valido: this.clienteValido,
+                mensagem: 'Cliente deve ter pelo menos cinco caracteres'
+            }
+        ];
+    }
+
+    create(atendimento) {
         const dataCriacao = moment().format('YYYY-MM-DD HH:MM:SS');
         const data = moment(atendimento.data, 'DD/MM/YYYY').format(
             'YYYY-MM-DD HH:MM:SS'
         );
 
-        const dataValida = moment(data).isSameOrAfter(dataCriacao);
-        const clienteValido = atendimento.cliente.length >= 5;
+        const parametros = {
+            data: { data, dataCriacao },
+            cliente: { tamanho: atendimento.cliente.length }
+        };
 
-        const validacoes = [
-            {
-                nome: 'data',
-                valido: dataValida,
-                mensagem: 'Data deve ser maior ou igual a data atual'
-            },
-            {
-                nome: 'cliente',
-                valido: clienteValido,
-                mensagem: 'Cliente deve ter pelo menos cinco caracteres'
-            }
-        ];
-        const erros = validacoes.filter((item) => !item.valido);
+        const erros = this.valida(parametros);
         const existemErros = erros.length;
 
         if (existemErros) {
-            res.status(400).json(erros);
+            return new Promise((reject) => reject(erros));
         } else {
             const atendimentoDatado = { ...atendimento, dataCriacao, data };
             return repositories.create(atendimentoDatado).then((resultados) => {
@@ -39,16 +56,8 @@ class Atendimento {
         }
     }
 
-    list(res) {
-        const sql = 'SELECT * FROM Atendimentos';
-
-        conexao.query(sql, (erro, resultados) => {
-            if (erro) {
-                res.status(400).json(erro);
-            } else {
-                res.status(200).json(resultados);
-            }
-        });
+    list() {
+        return repositories.list();
     }
 
     searchId(id, res) {
